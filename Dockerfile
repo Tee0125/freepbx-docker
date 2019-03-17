@@ -104,11 +104,13 @@ RUN wget http://downloads.asterisk.org/pub/telephony/asterisk/asterisk-16-curren
 RUN useradd -m $ASTERISKUSER \
         && touch /etc/asterisk/modules.conf \
         && touch /etc/asterisk/cdr.conf \
-        && chown $ASTERISKUSER. /var/run/asterisk \ 
-        && chown -R $ASTERISKUSER. /etc/asterisk \
-        && chown -R $ASTERISKUSER /var/lib/asterisk /var/log/asterisk /var/spool/asterisk \
-        && chown -R $ASTERISKUSER. /usr/lib/asterisk \
-        && chown -R $ASTERISKUSER. /var/www/html \
+        && chown -R $ASTERISKUSER /etc/asterisk \
+        && chown -R $ASTERISKUSER /usr/lib/asterisk \
+        && chown -R $ASTERISKUSER /var/lib/asterisk \
+        && chown -R $ASTERISKUSER /var/log/asterisk \
+        && chown -R $ASTERISKUSER /var/spool/asterisk \
+        && chown -R $ASTERISKUSER /var/run/asterisk \
+        && chown -R $ASTERISKUSER /var/www/html \
         && sed -i 's/\(^upload_max_filesize = \).*/\120M/' /etc/php/7.2/apache2/php.ini\
         && sed -i 's/^\(User\|Group\).*/\1 asterisk/' /etc/apache2/apache2.conf \
         && sed -i 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf \
@@ -127,20 +129,24 @@ RUN find /var/lib/mysql -type f -exec touch {} \; \
         && rm -rf /var/www/html/* \
         && cd freepbx \
         && ./start_asterisk start \
+        && cp ./amp_conf/htdocs/admin/libraries/Composer/vendor/symfony/process/Process.bk.php \
+              ./amp_conf/htdocs/admin/libraries/Composer/vendor/symfony/process/Process.php \
         && sed -i \
             "s/timeout = 60/timeout = 600/g" \
             ./amp_conf/htdocs/admin/libraries/Composer/vendor/symfony/process/Process.php \
         && ./install -n \
         && fwconsole ma upgradeall \
         && fwconsole ma downloadinstall callforward ivr ringgroups \
+        && cp /var/www/html/admin/modules/cdr/install.php ~/install.php.bk \
         && sed -i \
              "s/\(.*count(\$alterclauses).*\)/if (\!is_array(\$alterclauses)) \$alterclauses = array();\n\\1/g" \
              /var/www/html/admin/modules/cdr/install.php \
         && fwconsole ma install cdr \
+        && cp ~/install.php.bk /var/www/html/admin/modules/cdr/install.php \
+        && rm ~/install.php.bk \
         && fwconsole restart \
-        && sed -i \
-            "s/timeout = 600/timeout = 60/g" \
-            ./amp_conf/htdocs/admin/libraries/Composer/vendor/symfony/process/Process.php \
+        && cp ./amp_conf/htdocs/admin/libraries/Composer/vendor/symfony/process/Process.bk.php \
+              ./amp_conf/htdocs/admin/libraries/Composer/vendor/symfony/process/Process.php \
         && sed -i \
             "s/\(require_once.*\)/\$amp_conf['CDRDBHOST'] = 'localhost';\n\\1/g" \
             /etc/freepbx.conf \

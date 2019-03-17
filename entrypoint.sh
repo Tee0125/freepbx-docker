@@ -5,7 +5,7 @@ if [ ! -v DBHOST ];then
 fi
 
 if [ ! -v DBUSER ];then
-    DBUSER=asterisk
+    DBUSER=${ASTERISKUSER}
 fi
 
 if [ ! -v DBPASS ];then
@@ -32,6 +32,10 @@ if [ ! -v CDR_DBNAME ];then
     CDR_DBNAME=asteriskcdrdb
 fi
 
+if [ $CDR_DBHOST -eq "localhost" ]; then
+    CDR_DBSOCKET=/var/run/mysqld/mysqld.sock
+fi
+
 # update db information
 sed -i "s/\(.*AMPDBHOST[^=]*= \)\(.*\)/\\1'${DBHOST}';/g" /etc/freepbx.conf 
 sed -i "s/\(.*AMPDBUSER[^=]*= \)\(.*\)/\\1'${DBUSER}';/g" /etc/freepbx.conf 
@@ -47,9 +51,10 @@ sed -i "s/\(^Server[^=]*= \)\(.*\)/\\1${CDR_DBHOST}/g" /etc/odbc.ini
 sed -i "s/\(^USER[^=]*= \)\(.*\)/\\1${CDR_DBUSER}/g" /etc/odbc.ini
 sed -i "s/\(^Password[^=]*= \)\(.*\)/\\1${CDR_DBPASS}/g" /etc/odbc.ini 
 sed -i "s/\(^Database[^=]*= \)\(.*\)/\\1${CDR_DBNAME}/g" /etc/odbc.ini
+sed -i "s/\(^Socket[^=]*= \)\(.*\)/\\1${CDR_DBSOCKET}/g" /etc/odbc.ini
 
 # start mysql if required
-if [ $DBHOST == "localhost" ];then
+if [ $DBHOST == "localhost" || $CDR_DBHOST == "localhost" ];then
     /etc/init.d/mysql start
 fi 
 
@@ -82,7 +87,12 @@ fi
 /etc/init.d/apache2 start
 
 # start asterisk
-asterisk -f &
+asterisk -f -U ${ASTERISKUSER} &
 
-tail -F /var/log/mysql/* /var/log/apache2/* /var/log/asterisk/*
+sleep 10
+
+# reload config
+fwconsole r
+
+tail -F /var/log/mysql/* /var/log/apache2/*
 
