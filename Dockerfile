@@ -129,24 +129,26 @@ RUN find /var/lib/mysql -type f -exec touch {} \; \
         && rm -rf /var/www/html/* \
         && cd freepbx \
         && ./start_asterisk start \
-        && cp ./amp_conf/htdocs/admin/libraries/Composer/vendor/symfony/process/Process.bk.php \
-              ./amp_conf/htdocs/admin/libraries/Composer/vendor/symfony/process/Process.php \
+        && cp ./amp_conf/htdocs/admin/libraries/Composer/vendor/symfony/process/Process.php \
+              ~/Process.php \
         && sed -i \
             "s/timeout = 60/timeout = 600/g" \
             ./amp_conf/htdocs/admin/libraries/Composer/vendor/symfony/process/Process.php \
         && ./install -n \
         && fwconsole ma upgradeall \
         && fwconsole ma downloadinstall callforward ivr ringgroups \
-        && cp /var/www/html/admin/modules/cdr/install.php ~/install.php.bk \
+        && cp /var/www/html/admin/modules/cdr/install.php \
+              ~/install.php \
         && sed -i \
              "s/\(.*count(\$alterclauses).*\)/if (\!is_array(\$alterclauses)) \$alterclauses = array();\n\\1/g" \
              /var/www/html/admin/modules/cdr/install.php \
         && fwconsole ma install cdr \
-        && cp ~/install.php.bk /var/www/html/admin/modules/cdr/install.php \
-        && rm ~/install.php.bk \
-        && fwconsole restart \
-        && cp ./amp_conf/htdocs/admin/libraries/Composer/vendor/symfony/process/Process.bk.php \
+        && cp ~/install.php \
+              /var/www/html/admin/modules/cdr/install.php \
+        && cp ~/Process.php \
               ./amp_conf/htdocs/admin/libraries/Composer/vendor/symfony/process/Process.php \
+        && rm ~/install.php ~/Process.php \
+        && fwconsole restart \
         && sed -i \
             "s/\(require_once.*\)/\$amp_conf['CDRDBHOST'] = 'localhost';\n\\1/g" \
             /etc/freepbx.conf \
