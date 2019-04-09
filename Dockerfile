@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM debian:8
 
 # Set environment variables
 ENV DEBIAN_FRONTEND noninteractive
@@ -12,7 +12,7 @@ RUN apt-get update \
         && apt-get install -y \
             curl \ 
             gnupg \
-        && curl -sL https://deb.nodesource.com/setup_8.x | bash - \
+        && curl -sL https://deb.nodesource.com/setup_11.x | bash - \
         && apt-get upgrade -y \
         && apt-get install -y \
             apache2 \
@@ -28,7 +28,8 @@ RUN apt-get update \
             libcurl4-openssl-dev \
             libical-dev \
             libicu-dev \
-            libmariadb-dev \
+            libmysqlclient-dev \
+            libmyodbc \
             libncurses5-dev \
             libneon27-dev \
             libnewt-dev \
@@ -41,17 +42,15 @@ RUN apt-get update \
             libtool-bin \
             libvorbis-dev \
             libxml2-dev \
-            mariadb-client \
-            mariadb-server \
+            mysql-client \
+            mysql-server \
             mpg123 \
             nodejs \
-            php \
-            php-cli \
-            php-curl \
-            php-gd \
-            php-mbstring \
-            php-mysql \
-            php-pdo \
+            php5 \
+            php5-cli \
+            php5-curl \
+            php5-gd \
+            php5-mysql \
             php-pear \
             pkg-config \
             python-dev \
@@ -63,10 +62,7 @@ RUN apt-get update \
             uuid \
             uuid-dev \
             wget \
-        && wget https://downloads.mariadb.com/Connectors/odbc/connector-odbc-3.0.8/mariadb-connector-odbc-3.0.8-ga-debian-x86_64.tar.gz \
-        && tar vxfz mariadb-connector-odbc-3.0.8-ga-debian-x86_64.tar.gz \
-        && cp lib/libmaodbc.so /usr/local/lib/ \
-        && rm -rf * \
+        && pear install Console_Getopt \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         && rm -rf /tmp/*
@@ -111,7 +107,7 @@ RUN useradd -m $ASTERISKUSER \
         && chown -R $ASTERISKUSER /var/spool/asterisk \
         && chown -R $ASTERISKUSER /var/run/asterisk \
         && chown -R $ASTERISKUSER /var/www/html \
-        && sed -i 's/\(^upload_max_filesize = \).*/\120M/' /etc/php/7.2/apache2/php.ini\
+        && sed -i 's/\(^upload_max_filesize = \).*/\120M/' /etc/php5/apache2/php.ini\
         && sed -i 's/^\(User\|Group\).*/\1 asterisk/' /etc/apache2/apache2.conf \
         && sed -i 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf \
         && a2enmod rewrite
@@ -129,25 +125,10 @@ RUN find /var/lib/mysql -type f -exec touch {} \; \
         && rm -rf /var/www/html/* \
         && cd freepbx \
         && ./start_asterisk start \
-        && cp ./amp_conf/htdocs/admin/libraries/Composer/vendor/symfony/process/Process.php \
-              ~/Process.php \
-        && sed -i \
-            "s/timeout = 60/timeout = 600/g" \
-            ./amp_conf/htdocs/admin/libraries/Composer/vendor/symfony/process/Process.php \
         && ./install -n \
         && fwconsole ma upgradeall \
         && fwconsole ma downloadinstall callforward ivr ringgroups \
-        && cp /var/www/html/admin/modules/cdr/install.php \
-              ~/install.php \
-        && sed -i \
-             "s/\(.*count(\$alterclauses).*\)/if (\!is_array(\$alterclauses)) \$alterclauses = array();\n\\1/g" \
-             /var/www/html/admin/modules/cdr/install.php \
         && fwconsole ma install cdr \
-        && cp ~/install.php \
-              /var/www/html/admin/modules/cdr/install.php \
-        && cp ~/Process.php \
-              ./amp_conf/htdocs/admin/libraries/Composer/vendor/symfony/process/Process.php \
-        && rm ~/install.php ~/Process.php \
         && fwconsole restart \
         && sed -i \
             "s/\(require_once.*\)/\$amp_conf['CDRDBHOST'] = 'localhost';\n\\1/g" \
@@ -159,7 +140,7 @@ RUN find /var/lib/mysql -type f -exec touch {} \; \
             "s/\(require_once.*\)/\$amp_conf['CDRDBPASS'] = '';\\n\\1/g" \
             /etc/freepbx.conf \
         && sed -i \
-            "s/\(require_once.*\)/\$amp_conf['CDRDBNAME'] = 'asteriskcdr';\n\n\\1/g" \
+            "s/\(require_once.*\)/\$amp_conf['CDRDBNAME'] = 'asteriskcdrdb';\n\n\\1/g" \
             /etc/freepbx.conf \
         && mysqldump asterisk > ~/asterisk.sql \
         && mysqldump asteriskcdrdb > ~/asterisk_cdr.sql \

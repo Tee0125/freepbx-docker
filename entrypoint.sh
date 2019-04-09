@@ -1,38 +1,38 @@
 #!/bin/bash
 
-if [ ! -v DBHOST ];then
+if [ ! -z $DBHOST ];then
     DBHOST=localhost
 fi
 
-if [ ! -v DBUSER ];then
+if [ ! -v $DBUSER ];then
     DBUSER=${ASTERISKUSER}
 fi
 
-if [ ! -v DBPASS ];then
+if [ ! -v $DBPASS ];then
     DBPASS=
 fi
 
-if [ ! -v DBNAME ];then
+if [ ! -z $DBNAME ];then
     DBNAME=asterisk
 fi
 
-if [ ! -v CDR_DBHOST ];then
+if [ ! -z $CDR_DBHOST ];then
     CDR_DBHOST="${DBHOST}"
 fi
 
-if [ ! -v CDR_DBUSER ];then
+if [ ! -z $CDR_DBUSER ];then
     CDR_DBUSER="${DBUSER}"
 fi
 
-if [ ! -v CDR_DBPASS ];then
+if [ ! -z $CDR_DBPASS ];then
     CDR_DBPASS="${DBPASS}"
 fi
 
-if [ ! -v CDR_DBNAME ];then
+if [ ! -z $CDR_DBNAME ];then
     CDR_DBNAME=asteriskcdrdb
 fi
 
-if [ $CDR_DBHOST -eq "localhost" ]; then
+if [ $CDR_DBHOST == "localhost" ]; then
     CDR_DBSOCKET=/var/run/mysqld/mysqld.sock
 fi
 
@@ -55,6 +55,7 @@ sed -i "s/\(^Socket[^=]*= \)\(.*\)/\\1${CDR_DBSOCKET}/g" /etc/odbc.ini
 
 # start mysql if required
 if [ $DBHOST == "localhost" || $CDR_DBHOST == "localhost" ];then
+    find /var/lib/mysql -type f -exec touch {} \;
     /etc/init.d/mysql start
 fi 
 
