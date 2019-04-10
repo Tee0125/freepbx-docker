@@ -126,10 +126,17 @@ RUN find /var/lib/mysql -type f -exec touch {} \; \
         && cd freepbx \
         && ./start_asterisk start \
         && ./install -n \
+        && cp /var/www/html/admin/libraries/Composer/vendor/symfony/process/Process.php \
+              ~/Process.php \
+        && sed -i \
+            "s/timeout = 60/timeout = 600/g" \
+            /var/www/html/admin/libraries/Composer/vendor/symfony/process/Process.php \
         && fwconsole ma upgradeall \
         && fwconsole ma downloadinstall callforward ivr ringgroups \
         && fwconsole ma install cdr \
         && fwconsole restart \
+        && cp ~/Process.php /var/www/html/admin/libraries/Composer/vendor/symfony/process/Process.php \
+        && rm ~/Process.php \
         && sed -i \
             "s/\(require_once.*\)/\$amp_conf['CDRDBHOST'] = 'localhost';\n\\1/g" \
             /etc/freepbx.conf \
