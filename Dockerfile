@@ -124,13 +124,13 @@ RUN find /var/lib/mysql -type f -exec touch {} \; \
         && rm -f freepbx-15.0-latest.tgz \
         && rm -rf /var/www/html/* \
         && cd freepbx \
-        && ./start_asterisk start \
-        && ./install -n \
         && cp ./amp_conf/htdocs/admin/libraries/Composer/vendor/symfony/process/Process.php  \
               ~/Process.php \
         && sed -i \
             "s/timeout = 60/timeout = 600/g" \
             ./amp_conf/htdocs/admin/libraries/Composer/vendor/symfony/process/Process.php  \
+        && ./start_asterisk start \
+        && ./install -n \
         && fwconsole ma upgradeall \
         && fwconsole ma downloadinstall callforward ivr ringgroups \
         && fwconsole ma install cdr \
